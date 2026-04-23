@@ -3,7 +3,7 @@ import {IsEmail, IsString, Length} from "class-validator";
 
 export class CreateAuthDto {
   @IsString()
-  @Length(5, 15)
+  @Length(4, 15)
   @ApiProperty({default: "user"})
   username!: string;
 

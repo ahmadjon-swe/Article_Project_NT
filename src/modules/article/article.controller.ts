@@ -2,11 +2,13 @@ import {
   Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe,
   UseInterceptors,
   UploadedFile,
-  UseGuards
+  UseGuards,
+  Req
 } from '@nestjs/common';
 import {
   ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth,
-  ApiConsumes
+  ApiConsumes,
+  ApiInternalServerErrorResponse
 } from '@nestjs/swagger';
 import { ArticleService } from './article.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -23,7 +25,7 @@ import { RolesUser } from 'src/shared/enums/roles.enum';
 
 @ApiBearerAuth("JWT-auth")
 @ApiTags('Articles')
-@ApiBearerAuth()
+@ApiInternalServerErrorResponse({description: "Interval server error"})
 @Controller('article')
 export class ArticleController {
   constructor(private readonly articleService: ArticleService) {}
@@ -31,7 +33,7 @@ export class ArticleController {
   // POST /article
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
-  @Post()
+  @Post('add_article')
   @ApiOperation({ summary: 'Create a new article' })
   @ApiBody({ type: CreateFileArticleDto })
   @ApiResponse({ status: 201, description: 'Article successfully created', type: Article })
@@ -49,12 +51,12 @@ export class ArticleController {
       })
     })
   )
-  create(@Body() createArticleDto: CreateArticleDto, @UploadedFile() file: Express.Multer.File) {
-    return this.articleService.create(createArticleDto, file);
+  create(@Body() createArticleDto: CreateArticleDto, @UploadedFile() file: Express.Multer.File, @Req() req) {
+    return this.articleService.create(createArticleDto, file, req.user.id);
   }
 
   // GET /article
-  @Get()
+  @Get('get_all_articles')
   @ApiOperation({ summary: 'Get all articles' })
   @ApiResponse({ status: 200, description: 'List of all articles', type: [Article] })
   findAll() {
@@ -62,7 +64,7 @@ export class ArticleController {
   }
 
   // GET /article/:id
-  @Get(':id')
+  @Get('get_article/:id')
   @ApiOperation({ summary: 'Get article by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Article ID' })
   @ApiResponse({ status: 200, description: 'Article found', type: Article })
@@ -74,7 +76,7 @@ export class ArticleController {
   // PATCH /article/:id
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
-  @Patch(':id')
+  @Patch('update_article/:id')
   @ApiOperation({ summary: 'Update article by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Article ID' })
   @ApiBody({ type: UpdateArticleDto })
@@ -87,7 +89,7 @@ export class ArticleController {
   // DELETE /article/:id
   @UseGuards(AuthGuard, RolesGuard)
   @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
-  @Delete(':id')
+  @Delete('delete_article/:id')
   @ApiOperation({ summary: 'Delete article by ID' })
   @ApiParam({ name: 'id', type: Number, description: 'Article ID' })
   @ApiResponse({ status: 200, description: 'Article successfully deleted' })

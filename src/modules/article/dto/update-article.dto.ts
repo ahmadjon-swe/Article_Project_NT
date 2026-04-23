@@ -1,5 +1,6 @@
 import { ApiProperty } from "@nestjs/swagger"
-import { IsNumber, IsString, Length } from "class-validator"
+import { Transform } from "class-transformer"
+import { IsArray, IsInt, IsNumber, IsString, Length } from "class-validator"
 
 export class UpdateArticleDto {
   @IsString()
@@ -9,4 +10,10 @@ export class UpdateArticleDto {
   @IsString()
   @ApiProperty({default: "Express.js is easier to learn, Nesj.js is easy after you learn it."})
   content?: string
+
+  @IsArray()
+  @Transform(({value})=>typeof value ==="string"?value.split(",").map(item=>Number(item)):value)
+  @IsInt({each: true})
+  @ApiProperty({default: [1, 2, 3]})
+  tags?: number[]
 }
