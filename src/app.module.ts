@@ -7,6 +7,8 @@ import { Article } from "./modules/article/entities/article.entity";
 import { Auth } from "./modules/auth/entities/auth.entity";
 import { TagModule } from "./modules/tag/tag.module";
 import { Tag } from "./modules/tag/entities/tag.entity";
+import { ArticleImageModule } from "./modules/article-image/article-image.module";
+import { ArticleImage } from "./modules/article-image/entities/article-image.entity";
 
 
 @Module({
@@ -19,14 +21,15 @@ import { Tag } from "./modules/tag/entities/tag.entity";
       host: "localhost",
       database: String(process.env.DB_NAME as string),
       password: String(process.env.DB_PASSWORD as string),
-      entities: [Auth, Article, Tag],
+      entities: [Auth, Article, Tag, ArticleImage],
       synchronize: true,
-      // dropSchema: true,
+      dropSchema: true,
       logging: false  
     }),
     ArticleModule,
     AuthModule,
-    TagModule
+    TagModule,
+    ArticleImageModule
   ],
   controllers: [],
   providers: [],

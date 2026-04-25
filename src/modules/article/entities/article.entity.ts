@@ -1,4 +1,5 @@
 import { BaseEntity } from "src/database/entities/base.entity";
+import { ArticleImage } from "src/modules/article-image/entities/article-image.entity";
 import { Auth } from "src/modules/auth/entities/auth.entity";
 import { Tag } from "src/modules/tag/entities/tag.entity";
 import { Column, DeleteDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne } from "typeorm";
@@ -28,6 +29,8 @@ export class Article extends BaseEntity {
   @JoinTable({name: "tag_id"})
   tags: Tag[]
 
+  @ManyToOne(()=>ArticleImage, image=>image.article)
+  images: ArticleImage[]
   
   @DeleteDateColumn({nullable: true})
   deletedAt?: Date
