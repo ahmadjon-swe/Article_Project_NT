@@ -23,7 +23,7 @@ import { ArticleImage } from "./modules/article-image/entities/article-image.ent
       password: String(process.env.DB_PASSWORD as string),
       entities: [Auth, Article, Tag, ArticleImage],
       synchronize: true,
-      dropSchema: true,
+      // dropSchema: true,
       logging: false  
     }),
     ArticleModule,

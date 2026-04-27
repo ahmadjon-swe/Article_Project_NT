@@ -1,6 +1,7 @@
 import * as nodemailer from "nodemailer";
 
 function getTransporter() {
+  
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -12,6 +13,8 @@ function getTransporter() {
 
 export async function otpSender(otp: string, email: string): Promise<void> {
   try {
+    
+    
     await getTransporter().sendMail({
       from: `"Your App" <${process.env.EMAIL}>`,
       to: email,
@@ -27,6 +30,7 @@ export async function otpSender(otp: string, email: string): Promise<void> {
       `,
     });
   } catch (error: any) {
-    throw new Error(error.message);
+    console.log(error);
+    throw new Error(error.message)
   }
 }

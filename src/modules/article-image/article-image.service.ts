@@ -5,8 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ArticleImage } from './entities/article-image.entity';
 import { Repository } from 'typeorm';
 import { Article } from '../article/entities/article.entity';
-import fs from 'fs'
-import path from 'path';
+import * as fs from 'fs'
+import * as path from 'path';
 
 @Injectable()
 export class ArticleImageService {
@@ -15,24 +15,44 @@ export class ArticleImageService {
     @InjectRepository(Article) private articleRepo: Repository<Article>
 ){}
 
-  async create(createArticleImageDto: CreateArticleImageDto, files: Express.Multer.File[]) {
-    const foundedArticle = await this.articleRepo.findOne({where: {id: createArticleImageDto.articleId}, relations: ["images"]})
+ async create(createArticleImageDto: CreateArticleImageDto, files: Express.Multer.File[]) {
+  const foundedArticle = await this.articleRepo.findOne({
+    where: { id: +createArticleImageDto.articleId },
+    relations: ["images"]
+  });
 
-    if(!foundedArticle) throw new NotFoundException("Article is not found")
+  if (!foundedArticle) throw new NotFoundException("Article is not found");
 
-    if((foundedArticle.images.length+files.length)>10) throw new BadRequestException(`reached limit of images, ${10-foundedArticle.images.length} images can be added`)
-    
-    let order = (Math.max(...foundedArticle.images.map(v=>v.order)) || 0)+1
+  const currentImages = foundedArticle.images?.length ?? 0;
+const newFiles = files?.length ?? 0;
 
-    const images: any = []
-    for (const image of files) {
-      const img = this.articleImageRepo.create({url: `/uploads/${image.filename}`, order, article: {id: createArticleImageDto.articleId}})
-      images.push(await this.articleImageRepo.save(img))
-      order++
-    }
+if (currentImages >= 10 || currentImages + newFiles > 10) {
+  throw new BadRequestException(
+    `Reached image limit. You can add ${10 - currentImages} more image(s).`
+  );
+}
 
-    return images
-  }
+const existingImages = foundedArticle.images ?? [];  // ← null himoya
+
+const maxOrder = existingImages.length > 0
+  ? Math.max(...existingImages.map(v => v.order))
+  : 0;
+
+let order = maxOrder + 1;
+
+const images = await Promise.all(
+  files.map((file, i) => {
+    const img = this.articleImageRepo.create({
+      url: `/uploads/${file.filename}`,
+      order: order + i,
+      article: { id: +createArticleImageDto.articleId }
+    });
+    return this.articleImageRepo.save(img);
+  })
+);
+
+return images;
+}
 
   async findAll() {
     return await this.articleImageRepo.find();
@@ -49,7 +69,9 @@ export class ArticleImageService {
   
 
   async findOne(id: number) {
-    return await this.articleImageRepo.findOne({where: {id}})
+    const image =  await this.articleImageRepo.findOne({where: {id}})
+    if(!image) throw new NotFoundException("image is not found")
+    return image
   }
 
   async update(id: number, updateArticleImageDto: UpdateArticleImageDto, file: Express.Multer.File) {
@@ -70,8 +92,8 @@ export class ArticleImageService {
     }
 
     if(file){
-      const filePath = path.join(__dirname, `../../..${foundedImage.url}`)
-      await fs.unlink(filePath, (err)=>{
+      const filePath = path.join(process.cwd(), 'uploads', path.basename(foundedImage.url)) 
+      fs.unlink(filePath, (err)=>{
         if(err){
           console.log(err.message);
           return
@@ -91,7 +113,7 @@ export class ArticleImageService {
     if(!foundedImage) throw new NotFoundException("article image is not found")
 
     const filePath = path.join(__dirname, `../../..${foundedImage.url}`)
-    await fs.unlink(filePath, (err)=>{
+    fs.unlink(filePath, (err)=>{
       if(err){
         console.log(err.message);
         return

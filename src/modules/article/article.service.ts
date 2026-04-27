@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException, Search } from '@nestjs/common';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import { Article } from './entities/article.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Tag } from '../tag/entities/tag.entity';
+import { QueryArticleDto } from './dto/query.dto';
 
 @Injectable()
 export class ArticleService {
@@ -28,13 +29,36 @@ export class ArticleService {
     return await this.articleRepo.save(article)
   }
 
-  async findAll() {
-    try {
-      
-      return await this.articleRepo.find()
-    } catch (error) {
-      throw new InternalServerErrorException(error.message)
+  async findAll(dto: QueryArticleDto) {
+
+    const {search, page=1, limit=10} = dto
+
+    const queryBuilder = this.articleRepo.createQueryBuilder("article")
+    .leftJoinAndSelect("article.tags", "tags")
+    .where("article.deletedAt is null")
+
+    if(search) {
+      queryBuilder.andWhere("article.title ILIKE :search or article.content ILIKE :search or tags.name ILIKE :search", 
+        {search: `%${search}%`})
     }
+
+    const result = queryBuilder
+    .orderBy("article.id", "ASC")
+    .skip((page - 1)*limit)
+    .limit(limit)
+    .getMany
+
+    const totalPage = Math.ceil((await queryBuilder.getCount()/limit))
+
+    return {
+      totalPage,
+      prev: page>1?page-1:undefined,
+      next: page<totalPage?page+1:undefined,
+      result
+    }
+
+
+
   }
 
   async findOne(id: number): Promise<Article> {

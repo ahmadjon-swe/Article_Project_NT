@@ -21,29 +21,31 @@ export class ArticleImageController {
   constructor(private readonly articleImageService: ArticleImageService) {}
 
   @UseGuards(AuthGuard, RolesGuard)
-    @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
-    @Post('add_article_image')
-    @ApiOperation({ summary: 'Create a new article' })
-    @ApiBody({ type: CreateImageDto })
-    @ApiResponse({ status: 201, description: 'Article successfully created', type: ArticleImage })
-    @ApiResponse({ status: 400, description: 'Bad request' })
-    @ApiConsumes("multipart/form-data")
-    @UseInterceptors(
-      FilesInterceptor("files", 10, {
-        storage: diskStorage({
-          destination: path.join(process.cwd(), "uploads"),
-          filename: (req, file, cb) => {
-            const uniqueSuffix = `${file.originalname}-${Date.now()}`
-            const ext = path.extname(file.originalname)
-            cb(null, `${uniqueSuffix}${ext}`)
-          }
-        })
+  @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
+  @Post('add_article_image')
+  @ApiOperation({ summary: 'Create a new article' })
+  @ApiBody({ type: CreateImageDto })
+  @ApiResponse({ status: 201, description: 'Article successfully created', type: ArticleImage })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(
+    FilesInterceptor("files", 10, {
+      storage: diskStorage({
+        destination: path.join(process.cwd(), "uploads"),
+        filename: (req, file, cb) => {
+          const uniqueSuffix = `${file.originalname}-${Date.now()}`
+          const ext = path.extname(file.originalname)
+          cb(null, `${uniqueSuffix}${ext}`)
+        }
       })
-    )
+    })
+  )
   create(@Body() createArticleImageDto: CreateArticleImageDto, @UploadedFiles() files: Express.Multer.File[]) {
     return this.articleImageService.create(createArticleImageDto, files);
   }
 
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
   @Get('get_all_images')
   findAll() {
     return this.articleImageService.findAll();
@@ -54,37 +56,40 @@ export class ArticleImageController {
     return this.articleImageService.findByArticle(+id);
   }
 
-  @Get(':id')
+  @Get('get_image/:id')
   findOne(@Param('id') id: string) {
     return this.articleImageService.findOne(+id);
   }
 
+  
   @UseGuards(AuthGuard, RolesGuard)
-    @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
-    @Post('add_article')
-    @ApiOperation({ summary: 'Create a new article' })
-    @ApiBody({ type: UpdateImageDto })
-    @ApiResponse({ status: 201, description: 'Article successfully created', type: ArticleImage })
-    @ApiResponse({ status: 400, description: 'Bad request' })
-    @ApiConsumes("multipart/form-data")
-    @UseInterceptors(
-      FileInterceptor("file", {
-        storage: diskStorage({
-          destination: path.join(process.cwd(), "uploads"),
-          filename: (req, file, cb) => {
-            const uniqueSuffix = `${file.originalname}-${Date.now()}`
-            const ext = path.extname(file.originalname)
-            cb(null, `${uniqueSuffix}${ext}`)
-          }
-        })
+  @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
+  @Post('add_article')
+  @ApiOperation({ summary: 'Create a new article' })
+  @ApiBody({ type: UpdateImageDto })
+  @ApiResponse({ status: 201, description: 'Article successfully created', type: ArticleImage })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiConsumes("multipart/form-data")
+  @UseInterceptors(
+    FileInterceptor("file", {
+      storage: diskStorage({
+        destination: path.join(process.cwd(), "uploads"),
+        filename: (req, file, cb) => {
+          const uniqueSuffix = `${file.originalname}-${Date.now()}`
+          const ext = path.extname(file.originalname)
+          cb(null, `${uniqueSuffix}${ext}`)
+        }
       })
-    )
-  @Patch(':id')
+    })
+  )
+  @Patch('update_image/:id')
   update(@Param('id') id: string, @Body() updateArticleImageDto: UpdateArticleImageDto, @UploadedFile() file: Express.Multer.File) {
     return this.articleImageService.update(+id, updateArticleImageDto, file);
   }
 
-  @Delete(':id')
+  @UseGuards(AuthGuard, RolesGuard)
+  @Roles(RolesUser.ADMIN, RolesUser.SUPERADMIN, RolesUser.USER)
+  @Delete('delete_image/:id')
   remove(@Param('id') id: string) {
     return this.articleImageService.remove(+id);
   }
