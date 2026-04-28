@@ -15,44 +15,29 @@ export class ArticleImageService {
     @InjectRepository(Article) private articleRepo: Repository<Article>
 ){}
 
- async create(createArticleImageDto: CreateArticleImageDto, files: Express.Multer.File[]) {
-  const foundedArticle = await this.articleRepo.findOne({
-    where: { id: +createArticleImageDto.articleId },
-    relations: ["images"]
-  });
+  async create(createArticleImageDto: CreateArticleImageDto, files: Express.Multer.File[]) {
+    const foundedArticle = await this.articleRepo.findOne({where: {id: +createArticleImageDto.articleId}, relations: ["images"]})
 
-  if (!foundedArticle) throw new NotFoundException("Article is not found");
+    if(!foundedArticle) throw new NotFoundException("Article is not found")
+      
+    const currentImages = await this.articleImageRepo.find({where: {article: {id:  +createArticleImageDto.articleId }}})
 
-  const currentImages = foundedArticle.images?.length ?? 0;
-const newFiles = files?.length ?? 0;
+    if ((currentImages.length + files.length)>10) {
+      throw new BadRequestException(
+        `Reached image limit. You can add ${10 - currentImages.length} more image(s).`
+      );
+    }
+    let order = (Math.max(...foundedArticle.images.map(v=>v.order)) || 0)+1
 
-if (currentImages >= 10 || currentImages + newFiles > 10) {
-  throw new BadRequestException(
-    `Reached image limit. You can add ${10 - currentImages} more image(s).`
-  );
-}
+    const images: any = []
+    for (const image of files) {
+      const img = this.articleImageRepo.create({url: `/uploads/${image.filename}`, order, article: {id: +createArticleImageDto.articleId}})
+      images.push(await this.articleImageRepo.save(img))
+      order++
+    }
 
-const existingImages = foundedArticle.images ?? [];  // ← null himoya
-
-const maxOrder = existingImages.length > 0
-  ? Math.max(...existingImages.map(v => v.order))
-  : 0;
-
-let order = maxOrder + 1;
-
-const images = await Promise.all(
-  files.map((file, i) => {
-    const img = this.articleImageRepo.create({
-      url: `/uploads/${file.filename}`,
-      order: order + i,
-      article: { id: +createArticleImageDto.articleId }
-    });
-    return this.articleImageRepo.save(img);
-  })
-);
-
-return images;
-}
+    return images
+  }
 
   async findAll() {
     return await this.articleImageRepo.find();
